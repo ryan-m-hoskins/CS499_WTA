@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.cs499_app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.cs499_app"
@@ -51,8 +51,20 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     annotationProcessor(libs.androidx.room.compiler)
+    implementation (libs.firebase.ui.auth)
 
+    // Jetpack Compose integration
+    implementation(libs.androidx.navigation.compose)
 
+    // Views/Fragments integration
+    implementation(libs.androidx.navigation.fragment)
+    implementation(libs.androidx.navigation.ui)
+
+    // Feature module support for Fragments
+    implementation(libs.androidx.navigation.dynamic.features.fragment)
+
+    // Testing Navigation
+    androidTestImplementation(libs.androidx.navigation.testing)
     testImplementation(libs.junit)
 
     androidTestImplementation(libs.androidx.junit)

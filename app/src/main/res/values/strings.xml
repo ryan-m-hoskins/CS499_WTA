@@ -39,4 +39,6 @@
     <string name="notification_settings">Notification Settings</string>
     <string name="enable_sms_notifications">Enable SMS Notifications</string>
     <string name="sms_notifications_will_be_delivered_when_reaching_your_target_weight">SMS Notifications will be delivered when reaching your target weight.</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

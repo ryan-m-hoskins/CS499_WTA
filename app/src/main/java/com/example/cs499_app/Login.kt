@@ -1,68 +1,111 @@
 package com.example.cs499_app
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 class Login : AppCompatActivity() {
-    private lateinit var loginViewModel : LoginViewModel
-
-    private var usernameEditText: EditText? = null
-    private var passwordEditText: EditText? = null
-    private var loginButton: Button? = null
-    private var signupButton: Button? = null
+    private val loginViewModel: LoginViewModel by viewModels()
+    private lateinit var usernameEditText: EditText
+    private lateinit var passwordEditText: EditText
     private var loginErrorMessage: TextView? = null
+    private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_login)
-        loginViewModel = ViewModelProvider(this).get(LoginViewModel::class.java)
-
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.login_activity)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        val loginButton = findViewById<Button>(R.id.loginButton)
+        val signupButton = findViewById<Button>(R.id.signupButton)
+
+        // Listener for when the Login button is tapped
+        loginButton.setOnClickListener {
+            // Get the username and password from the EditText fields
+            val username = usernameEditText.text.toString()
+            val password = passwordEditText.text.toString()
+            loginViewModel.signIn(username, password)
+        }
+
+        // Listener for when the Signup button is tapped
+        signupButton.setOnClickListener {
+            // Get the username and password from the EditText fields
+            val username = usernameEditText.text.toString()
+            val password = passwordEditText.text.toString()
+            loginViewModel.register(username, password)
+        }
 
         // Initialize the fields used in the login screen
         usernameEditText = findViewById(R.id.usernameEditText)
-        loginButton = findViewById(R.id.loginButton)
         passwordEditText = findViewById(R.id.passwordEditText)
-        signupButton = findViewById(R.id.signupButton)
         loginErrorMessage = findViewById(R.id.loginErrorMessage)
+        loginButton.isEnabled = false
 
-
-        // === Disable Sign In if username and password are empty === //
-        usernameEditText?.addTextChangedListener(object : TextWatcher {
+        // TestWatcher to handle loginButton enablement logic,
+        val textWatcher = object : TextWatcher {
             override fun beforeTextChanged(charSequence: CharSequence, i: Int, i1: Int, i2: Int) {
                 // Nothing
             }
-            // Call checkFields when usernameEditText has changed
+
             override fun onTextChanged(charSequence: CharSequence, i: Int, i1: Int, i2: Int) {
-                checkFields()
-            }
-            override fun afterTextChanged(editable: Editable) {
                 // Nothing
             }
-        });
+
+            // After the text field has changed,
+            override fun afterTextChanged(editable: Editable) {
+                // Enable button only if both fields have text
+                loginButton.isEnabled = usernameEditText.text.isNotEmpty() &&
+                        passwordEditText.text.isNotEmpty()
+            }
+        }
+        // Add the watcher to both EditText fields
+        usernameEditText.addTextChangedListener(textWatcher)
+        passwordEditText.addTextChangedListener(textWatcher)
+
+        lifecycleScope.launch {
+            loginViewModel.loginState.collect { state ->
+                when (state) {
+                    is LoginViewModel.LoginState.Idle -> {
+                        // Nothing
+                    }
+                    is LoginViewModel.LoginState.Loading -> {
+                        // Nothing
+                    }
+                    is LoginViewModel.LoginState.Success -> {
+                        Toast.makeText(this@Login, "Login successful", Toast.LENGTH_SHORT).show()
+                        startMainActivity()
+                    }
+                    is LoginViewModel.LoginState.Error -> {
+                        Toast.makeText(this@Login, state.message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
     }
-
-    // Inside your LoginActivity or a helper function
-    fun checkFields() {
-        val username = usernameEditText?.text?.toString()?.trim() // Get the username text
-        val password = passwordEditText?.text?.toString()?.trim() // Get the password text
-        loginButton?.isEnabled = !username.isNullOrEmpty() && !password.isNullOrEmpty() // Enable if both are filled
-
+    // Creates new intent to start MainActivity
+    private fun startMainActivity() {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
-
 }
 
