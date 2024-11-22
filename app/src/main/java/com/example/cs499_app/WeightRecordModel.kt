@@ -5,6 +5,4 @@ data class WeightRecordModel (
     var weight: Double = 0.0,
     val image: String = ""
 )
-{
-    constructor() : this("", "", 0.0, "")
-}
+

@@ -13,6 +13,7 @@
     <string name="Daily_Weight_Tracker">Daily Weight Tracker</string>
     <string name="your_target_weight">Your Target Weight:</string>
     <string name="blank_target_weight">- - -</string>
+    <string name="weight_format">%.1f lbs</string>
     <string name="submit">SUBMIT</string>
     <string name="cancel">Cancel</string>
     <string name="enter_weight">Enter weight</string>

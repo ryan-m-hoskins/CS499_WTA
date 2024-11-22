@@ -52,13 +52,31 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             // Use email and password to handle sign in method from Firebase Auth
             auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
-                // If able to sign in, update login state to successful
+                // If able to register in, create user in firebase database
                 if (task.isSuccessful) {
-                    _loginState.value = LoginState.Success(auth.currentUser)
+                    // Assign current auth user to firebase user
+                    val firebaseUser = auth.currentUser
+                    if (firebaseUser != null) {
+                        // Get instance of root node in database
+                        val usersRef = FirebaseDatabase.getInstance().getReference("users")
+                        // Get instance of child node for user in database, using their uid
+                        val userRef = usersRef.child(firebaseUser.uid)
+                        // Create new user object and add to database
+                        val newUser = User(firebaseUser.uid, email, targetWeight = 0.0)
+                        userRef.setValue(newUser)
+                            // If able to create user, update login state to successful
+                            .addOnSuccessListener {
+                            _loginState.value = LoginState.Success(firebaseUser)
+                            }
+                            // If unable to create user, output error message
+                            .addOnFailureListener {
+                                _loginState.value = LoginState.Error("Unable to create user: ${it.message}")
+                            }
+                    }
                 }
                 // Otherwise, output error message
                 else {
-                    _loginState.value = LoginState.Error(task.exception?.message?: "Unable to login")
+                    _loginState.value = LoginState.Error(task.exception?.message?: "Unable to register user")
                 }
             }
         }
