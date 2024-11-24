@@ -1,10 +1,12 @@
 package com.example.cs499_app
 
+import WeightRecord
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import java.util.Calendar
 
 class DatabaseRepository {
     private val database = FirebaseDatabase.getInstance()
@@ -12,6 +14,37 @@ class DatabaseRepository {
     private val usersRef = database.getReference("users")
     private val weightRecordsRef = database.getReference("weight_records")
     private val targetWeightRef = database.getReference("target_weight")
+
+    // == Weight Record Methods == //
+    fun addWeightRecord(weight: Double, date: Long, onSuccess:() -> Unit, onError: (String) -> Unit) {
+        // If the user is not logged in or authenticated, return early
+        val currentUser = auth.currentUser?.uid ?: return
+        val recordRef = usersRef.child(currentUser).child("weight_records").push()
+        val weightRecord = WeightRecord(id = recordRef.key ?: "", weight = weight, date = date, userId = currentUser)
+        recordRef.setValue(weightRecord)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener {onError(it.message ?: "Error adding weight record")}
+    }
+
+    // == Updating Weight Record == //
+    fun updateWeightRecord(record: WeightRecord, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        // If the user is not logged in or authenticated, return early
+        val currentUser = auth.currentUser?.uid ?: return
+        usersRef.child(currentUser).child("weight_records").child(record.id)
+            .setValue(record)
+            .addOnSuccessListener{ onSuccess() }
+            .addOnFailureListener { onError(it.message ?: "Error updating weight record")}
+    }
+
+    // == Deletion of Weight Record == //
+    fun deleteWeightRecord(record: WeightRecord, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        // If the user is not logged in or authenticated, return early
+        val currentUser =  auth.currentUser?.uid?: return
+        usersRef.child(currentUser).child("weight_records").child(record.id)
+            .removeValue()
+            .addOnSuccessListener{ onSuccess()}
+            .addOnFailureListener { onError(it.message ?: "Error removing weight record")}
+    }
 
     // == Add or change Target Weight == //
     fun updateTargetWeight(targetWeight: Double, onSuccess: () -> Unit, onError: (String) -> Unit) {
@@ -25,6 +58,7 @@ class DatabaseRepository {
                 onError(it.message ?: "Error updating target weight")
             }
     }
+
 
     // == Retrieve the target weight from the database == //
     fun getTargetWeight(onSuccess: (Double?) -> Unit, onError: (String) -> Unit) {
@@ -44,8 +78,9 @@ class DatabaseRepository {
             }
     }
 
-    // == Method For Real-Time Observer of Target Weight == //
+    // == Method For Real-Time Observer of Target Weight and Weight Records == //
     private var targetWeightListener: ValueEventListener? = null
+    private var weightRecordListener: ValueEventListener? = null
 
     fun observeTargetWeight(onUpdate: (Double?) -> Unit, onError: (String) -> Unit) {
         val currentUser = auth.currentUser?.uid ?: return
@@ -68,11 +103,80 @@ class DatabaseRepository {
             .addValueEventListener(targetWeightListener!!)
     }
 
+    fun observeWeightRecords(onUpdate: (List<WeightRecord>) -> Unit, onError: (String) -> Unit) {
+        val currentUser = auth.currentUser?.uid ?: return
+
+        // Remove any existing listeners for weight record
+        removeWeightRecordListener()
+
+        weightRecordListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val weightRecords = mutableListOf<WeightRecord>()
+                for (recordSnapshot in snapshot.children) {
+                    recordSnapshot.getValue(WeightRecord::class.java)?.let {
+                        weightRecords.add(it)
+                    }
+                }
+                onUpdate(weightRecords)
+            }
+            override fun onCancelled(error: DatabaseError) {
+                onError(error.message)
+            }
+        }
+        usersRef.child(currentUser).child("weight_records")
+            .addValueEventListener(weightRecordListener!!)
+    }
+
+    // Cleanup of listener for weight record
+    fun removeWeightRecordListener() {
+        val currentUser = auth.currentUser?.uid ?: return
+        weightRecordListener?.let { listener ->
+            usersRef.child(currentUser).child("weight_records").removeEventListener(listener)
+        }
+        weightRecordListener = null
+    }
+    // Cleanup of listener for target weight
     fun removeTargetWeightListener() {
         val currentUser = auth.currentUser?.uid ?: return
         targetWeightListener?.let { listener ->
             usersRef.child(currentUser).child("targetWeight").removeEventListener(listener)
         }
         targetWeightListener = null
+    }
+
+    // == Method to validate user's input for date
+    fun checkDateExists(date: Long, onResult: (Boolean) -> Unit, onError: (String) -> Unit) {
+        val currentUser = auth.currentUser?.uid ?: return
+        // Convert input date to the beginning of the day
+        val startOfDay = Calendar.getInstance().apply {
+            timeInMillis = date
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+
+        // Convert to end of the day
+        val endOfDay = Calendar.getInstance().apply {
+            timeInMillis = date
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
+            set(Calendar.MILLISECOND, 999)
+        }.timeInMillis
+
+        // Navigate to current user node, weight records, order by date
+        usersRef.child(currentUser).child("weight_records").orderByChild("date")
+            // Start with beginning until the end of the day
+            .startAt(startOfDay.toDouble()).endAt(endOfDay.toDouble())
+            .get()
+            // Return true if such a record exists
+            .addOnSuccessListener { snapshot ->
+                onResult(snapshot.exists())
+            }
+            // Standard error handling if one occurs
+            .addOnFailureListener {
+                onError(it.message ?: "Error checking date")
+            }
     }
 }
