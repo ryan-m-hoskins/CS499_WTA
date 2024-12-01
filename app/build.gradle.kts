@@ -58,6 +58,13 @@ dependencies {
     annotationProcessor(libs.androidx.room.compiler)
     implementation (libs.firebase.ui.auth)
 
+    // MPAndroidChart
+    implementation(libs.mpandroidchart)
+
+    // Navigation
+    implementation(libs.navigation.fragment)
+    implementation(libs.navigation.ui)
+
     // Jetpack Compose integration
     implementation(libs.androidx.navigation.compose)
 

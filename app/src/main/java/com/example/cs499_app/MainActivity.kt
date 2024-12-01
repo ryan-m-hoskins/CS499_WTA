@@ -14,6 +14,10 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.cs499_app.DatabaseRepository
 import com.example.cs499_app.databinding.ActivityMainBinding
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
 
 class MainActivity : AppCompatActivity(),
     BottomSheetTargetWeight.TargetWeightListener,
