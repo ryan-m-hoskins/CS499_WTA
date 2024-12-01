@@ -19,14 +19,6 @@ class LoginViewModel : ViewModel() {
 
     // == Sign in method ==//
     fun signIn(email: String, password: String) {
-
-        // Ensure user enters email and password
-        /*
-        if (email.isBlank() || password.isBlank()) {
-            _loginState.value = LoginState.Error("Email and password cannot be empty")
-            return
-        }
-         */
         // Pending login state
         _loginState.value = LoginState.Loading
         // Launch a coroutine to handle the login process
@@ -44,7 +36,7 @@ class LoginViewModel : ViewModel() {
             }
         }
     }
-
+    // == Method for handling the registration process using Firebase Auth == //
     fun register(email: String, password: String) {
         // Pending login state
         _loginState.value = LoginState.Loading

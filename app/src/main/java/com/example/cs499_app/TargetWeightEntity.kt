@@ -24,3 +24,5 @@ class TargetWeightEntity {
     @ColumnInfo(name = "user_id")
     var userId: Int = 0
 }
+
+// TODO: Delete file and test app

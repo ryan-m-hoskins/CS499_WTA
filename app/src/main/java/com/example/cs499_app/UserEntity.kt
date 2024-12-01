@@ -19,3 +19,5 @@ class UserEntity // Constructor
     @PrimaryKey(autoGenerate = true)
     var id: Int = 0
 }
+
+// TODO: Delete file and test app

@@ -20,9 +20,10 @@ class MainActivity : AppCompatActivity(),
     BottomSheetAddWeight.AddWeightListener,
     BottomSheetEditWeight.EditWeightListener {
 
-    val database = FirebaseDatabase.getInstance()
+    // val database = FirebaseDatabase.getInstance()
+
+    // View binding for MainActivity to handle UI element
     private lateinit var binding: ActivityMainBinding
-    // private var databaseRepository = DatabaseRepository()
     private lateinit var databaseRepository: DatabaseRepository
     private lateinit var weightRecordAdapter: WeightRecordAdapter
 
@@ -32,14 +33,14 @@ class MainActivity : AppCompatActivity(),
         enableEdgeToEdge()
         setContentView(binding.root)
 
+        // Initialize database repository from Firebase
         databaseRepository = DatabaseRepository()
 
+        // Call methods to set up Recucler View, Click Listeners, and Observe Data
         setupRecyclerView()
         setupClickListeners()
         observeData()
 
-        // Observe Target Weight
-        //setupTargetWeightObserver()
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -47,21 +48,23 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
+    // == Method for setting up Recycler View == //
     private fun setupRecyclerView() {
         weightRecordAdapter = WeightRecordAdapter(
             onItemClick = { record ->
                 showEditWeightBottomSheet(record)
             }
         )
-
+        // Set up the RecyclerView
         binding.recyclerView.apply {
             adapter = weightRecordAdapter
             layoutManager = LinearLayoutManager(this@MainActivity)
             addItemDecoration(DividerItemDecoration(this@MainActivity, DividerItemDecoration.VERTICAL))
         }
     }
-
+    // == Setup for Click Listeners == //
     private fun setupClickListeners() {
+        // Click listener for FAB to add a new weight record
         binding.addRecordFAB.setOnClickListener {
             showAddWeightBottomSheet()
         }
@@ -71,29 +74,32 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
+    // Observes database changes within Firebase for the Target Weight and Weight Records
     private fun observeData() {
-        // == Method for Target Weight Observer == //
+        // Method for Target Weight Observer
         databaseRepository.observeTargetWeight(
             onUpdate = { targetWeight ->
                 targetWeight?.let {
-                    // Show target weight up to one decimal point
+                    // Show target weight up to one decimal point and add the "lbs"
                     binding.targetWeightInput.text = getString(R.string.weight_format, it)
                 } ?: run {
                     binding.targetWeightInput.setText(R.string.blank_target_weight)
                 }
             },
+            // Handle error to let user know
             onError = { errorMessage ->
                 Toast.makeText(this, "Error observing target weight: $errorMessage", Toast.LENGTH_SHORT).show()
             }
         )
-        // == Method for Weight Records Observer == //
+        // Method for Weight Records Observer to handle changes made to them
         databaseRepository.observeWeightRecords(
             onUpdate = { records ->
                 weightRecordAdapter.updateRecords(records)
                 binding.recyclerView.visibility = if (records.isEmpty()) View.GONE else View.VISIBLE
             },
+            // Handle error for weight record
             onError = { errorMessage ->
-                Toast.makeText(this, "Error observing target weight: $errorMessage", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Error observing weight: $errorMessage", Toast.LENGTH_SHORT).show()
             }
         )
     }
@@ -114,7 +120,9 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
+    // == Checking to see if an entered date already exists in the database to handle duplicates == //
     fun checkDateExists(date: Long, onDuplicateFound:() -> Unit, onDateAvailable:() -> Unit, onError:(String) -> Unit) {
+        // Check database using passed date
         databaseRepository.checkDateExists(date = date, onResult = { exists ->
             if (exists) {
                 onDuplicateFound()
@@ -126,7 +134,9 @@ class MainActivity : AppCompatActivity(),
             onError = onError)
     }
 
+    // == Setting weight record via bottom sheet after it's added == //
     override fun onWeightRecordSet(weight: Double, date: Long) {
+        // addWeightRecord method from Database repository
         databaseRepository.addWeightRecord(
             weight = weight,
             date = date,
@@ -140,7 +150,9 @@ class MainActivity : AppCompatActivity(),
         )
     }
 
+    // == Updating weight record via bottom sheet after it's edited == //
     override fun onWeightRecordUpdate(weightRecord: WeightRecord) {
+        // updateWeightRecord called from database repository
         databaseRepository.updateWeightRecord(
             record = weightRecord,
             onSuccess = {
@@ -152,6 +164,7 @@ class MainActivity : AppCompatActivity(),
         )
     }
 
+    // == Deleting weight record via bottom sheet == //
     override fun onWeightRecordDelete(weightRecord: WeightRecord) {
         databaseRepository.deleteWeightRecord(
             record = weightRecord,
@@ -164,6 +177,7 @@ class MainActivity : AppCompatActivity(),
         )
     }
 
+    // == Setting target weight via database repository == //
     override fun onTargetWeightSet(weight: Double) {
         databaseRepository.updateTargetWeight(
             targetWeight = weight,
@@ -176,6 +190,7 @@ class MainActivity : AppCompatActivity(),
         )
     }
 
+    // == Cleanup and removal of listeners == //
     override fun onDestroy() {
         super.onDestroy()
         databaseRepository.removeTargetWeightListener()

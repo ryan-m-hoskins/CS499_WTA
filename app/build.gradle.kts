@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.androidx.preference)
     annotationProcessor(libs.androidx.room.compiler)
     implementation (libs.firebase.ui.auth)
 

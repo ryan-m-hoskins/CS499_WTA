@@ -30,3 +30,6 @@ data class WeightRecordEntity (
     @field:ColumnInfo(name = "user_id")
     var userId: Int
 )
+
+
+// TODO: Delete file and test app

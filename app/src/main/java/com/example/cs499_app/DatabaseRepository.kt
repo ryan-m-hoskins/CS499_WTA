@@ -87,42 +87,50 @@ class DatabaseRepository {
         // Remove any existing listeners before adding a new one
         removeTargetWeightListener()
 
-        // Create new listener
+        // Create new listener for any changes to target weight
         targetWeightListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val targetWeight = snapshot.getValue(Double::class.java)
                 onUpdate(targetWeight)
             }
-
+            // Handles error if one occurs
             override fun onCancelled(error: DatabaseError) {
                 onError(error.message)
             }
         }
-
+        // Reference targetWeight node in database and set up listener
         usersRef.child(currentUser).child("targetWeight")
             .addValueEventListener(targetWeightListener!!)
     }
 
+    // Observing weight records in Firebase Realtime Database
+    // Retrieve list of weight record objects, or error depending on outcome
     fun observeWeightRecords(onUpdate: (List<WeightRecord>) -> Unit, onError: (String) -> Unit) {
+        // Get current user, return early if user is null
         val currentUser = auth.currentUser?.uid ?: return
 
         // Remove any existing listeners for weight record
         removeWeightRecordListener()
 
+        // Creating a new listener for the value of the weight record
         weightRecordListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val weightRecords = mutableListOf<WeightRecord>()
+                // Iterate through nodes in database until all weight records are found, adding each to a list
                 for (recordSnapshot in snapshot.children) {
                     recordSnapshot.getValue(WeightRecord::class.java)?.let {
                         weightRecords.add(it)
                     }
                 }
+                // Passes list of records to onUpdate function
                 onUpdate(weightRecords)
             }
+            // Handles error if one occurs throughout process
             override fun onCancelled(error: DatabaseError) {
                 onError(error.message)
             }
         }
+        // Reference weight records of a user, set listener at node for any changes
         usersRef.child(currentUser).child("weight_records")
             .addValueEventListener(weightRecordListener!!)
     }

@@ -27,6 +27,7 @@ class Login : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Set up edge-to-edge window and layout of screen
         enableEdgeToEdge()
         setContentView(R.layout.activity_login)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.login_activity)) { v, insets ->
@@ -34,6 +35,7 @@ class Login : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        // Initialize login and signup buttons
         val loginButton = findViewById<Button>(R.id.loginButton)
         val signupButton = findViewById<Button>(R.id.signupButton)
 
@@ -80,6 +82,7 @@ class Login : AppCompatActivity() {
         usernameEditText.addTextChangedListener(textWatcher)
         passwordEditText.addTextChangedListener(textWatcher)
 
+        // Coroutines for handling login state
         lifecycleScope.launch {
             loginViewModel.loginState.collect { state ->
                 when (state) {
@@ -89,10 +92,12 @@ class Login : AppCompatActivity() {
                     is LoginViewModel.LoginState.Loading -> {
                         // Nothing
                     }
+                    // Whenever state is success, confirm login and start MainActivity
                     is LoginViewModel.LoginState.Success -> {
                         Toast.makeText(this@Login, "Login successful", Toast.LENGTH_SHORT).show()
                         startMainActivity()
                     }
+                    // When state is error, let user know
                     is LoginViewModel.LoginState.Error -> {
                         Toast.makeText(this@Login, state.message, Toast.LENGTH_SHORT).show()
                     }
@@ -105,6 +110,7 @@ class Login : AppCompatActivity() {
         val intent = Intent(this, MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
+        // Remove from stack
         finish()
     }
 }
